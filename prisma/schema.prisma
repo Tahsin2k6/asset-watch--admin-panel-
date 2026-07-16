@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum TargetStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FindingStatus {
+  OPEN
+  TRIAGED
+  RESOLVED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(VIEWER)
+  createdAt    DateTime @default(now())
+
+  sessions  Session[]
+  targets   Target[]   @relation("TargetOwner")
+  findings  Finding[]  @relation("FindingReporter")
+  auditLogs AuditLog[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Target {
+  id        String       @id @default(cuid())
+  name      String
+  status    TargetStatus @default(ACTIVE)
+  ownerId   String
+  createdAt DateTime     @default(now())
+
+  owner    User      @relation("TargetOwner", fields: [ownerId], references: [id])
+  findings Finding[]
+
+  @@index([ownerId])
+}
+
+model Finding {
+  id          String        @id @default(cuid())
+  targetId    String
+  title       String
+  severity    Severity
+  status      FindingStatus @default(OPEN)
+  createdById String
+  createdAt   DateTime      @default(now())
+
+  target    Target @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("FindingReporter", fields: [createdById], references: [id])
+
+  @@index([targetId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+}
