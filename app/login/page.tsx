@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react"
 import "./style.css"
+import { useActionState } from "react"
 import { handleLogIn, LogInResponse } from "@/lib/actions/auth.action";
 
 const Page = () => {

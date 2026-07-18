@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { prisma } from "@/lib/db";
-import { hashPassword } from "@/lib/session";
+import { hashPassword } from "@/lib/auth/password";
 
 dotenv.config();
 

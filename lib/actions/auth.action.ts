@@ -1,9 +1,9 @@
 "use server";
 
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { createSession } from "../session";
+import { createSession } from "../auth/session";
 import { redirect } from "next/navigation";
+import { verifyPassword } from "../auth/password";
 
 export interface LogInResponse{
   error: string | null;
@@ -29,7 +29,7 @@ export async function handleLogIn(prevState: LogInResponse | null, formData: For
       return { error: "Invalid email or password." };
     }
     
-    const passValidate = await bcrypt.compare(password, user.passwordHash);
+    const passValidate = await verifyPassword(password, user.passwordHash);
     
     if (!passValidate) {
       return { error: "Invalid email or password." };
