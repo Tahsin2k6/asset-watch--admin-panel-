@@ -1,5 +1,6 @@
-import { getSession } from "@/lib/auth/session"
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session"
+import { hasMinimumRole } from "@/lib/auth/role";
 
 export default async function AdminPage() {
     const session = await getSession();
@@ -10,7 +11,7 @@ export default async function AdminPage() {
 
     const currentUser = session.user;
 
-    if (currentUser.role !== "SUPER_ADMIN") {
+    if (!hasMinimumRole(currentUser.role, "SUPER_ADMIN")) {
         redirect("/login");
     }
     

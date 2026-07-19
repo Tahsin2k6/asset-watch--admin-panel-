@@ -11,14 +11,16 @@ export interface LogInResponse{
 
 export async function handleLogIn(prevState: LogInResponse | null, formData: FormData): Promise<LogInResponse> {
   const email = (formData.get("email") as string).toLowerCase();
-
   const password = formData.get("password") as string;
+
+  const rememberMeRaw = formData.get("rememberMe");
+  const rememberMe = rememberMeRaw === "on";
 
   if (!email || !password) {
     return { error: "Email and password are required" };
   }
 
-  let isSuccess = false;
+  let userRole: string | null = null;
 
   try{
     const user  = await prisma.user.findUnique({
@@ -35,8 +37,8 @@ export async function handleLogIn(prevState: LogInResponse | null, formData: For
       return { error: "Invalid email or password." };
     }
 
-    await createSession(user.id);
-    isSuccess = true;
+    await createSession(user.id, rememberMe);
+    userRole = user.role;
     
   }
   catch (error) {
@@ -44,8 +46,11 @@ export async function handleLogIn(prevState: LogInResponse | null, formData: For
     return { error: "Internal database server error. Please try again." };
   }
 
-  if (isSuccess) {
+  if (userRole === "SUPER_ADMIN") {
     redirect("/super-admin"); 
+  }
+  else if (userRole === "VIEWER") {
+    redirect("/viewer");
   }
 
   return { error: null };

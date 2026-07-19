@@ -1,12 +1,6 @@
-import { getSession } from "@/lib/auth/session"
 import { redirect } from "next/navigation";
-
-const ROLE_RANK: Record<string, number> = {
-    VIEWER: 1,
-    ANALYST: 2,
-    ADMIN: 3,
-    SUPER_ADMIN: 4,
-}
+import { getSession } from "@/lib/auth/session"
+import { hasMinimumRole } from "@/lib/auth/role";
 
 export default async function ViewerPage() {
     const session = await getSession();
@@ -17,10 +11,7 @@ export default async function ViewerPage() {
 
     const currentUser = session.user;
 
-    const userRank = ROLE_RANK[currentUser.role] || 0;
-    const minAdminRank = ROLE_RANK.VIEWER;
-
-    if (userRank < minAdminRank) {
+    if (!hasMinimumRole(currentUser.role, "VIEWER")) {
         redirect("/login");
     }
     

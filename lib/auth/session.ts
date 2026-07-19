@@ -3,13 +3,15 @@ import { prisma } from "../db";
 import { cookies } from "next/headers";
 
 const SESSION_DURATION = 60 * 60 * 1000;
+const REMEMBER_ME_DURATION = 30 * 24 * 60 * 60 * 1000;
 
 function hashToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-export async function createSession(userID: string) {
-    const expiresAt = new Date(Date.now() + SESSION_DURATION);
+export async function createSession(userID: string, rememberMe: boolean = false) {
+    const extensionTime = rememberMe ?  REMEMBER_ME_DURATION : SESSION_DURATION;
+    const expiresAt = new Date(Date.now() + extensionTime);
 
     const rawToken = crypto.randomUUID();
 
@@ -24,13 +26,25 @@ export async function createSession(userID: string) {
     })
 
     const cookieStore = await cookies();
-    cookieStore.set("session", rawToken, {
+
+    const cookieOptions: {
+        httpOnly: boolean,
+        secure: boolean,
+        sameSite: "lax",
+        path: string,
+        expires?: Date
+    } = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        expires: expiresAt,
         sameSite: "lax",
         path: '/'
-    })
+    }
+
+    if(rememberMe) {
+        cookieOptions.expires = expiresAt;
+    }
+
+    cookieStore.set("session", rawToken, cookieOptions)
 }
 
 export async function getSession() {
@@ -62,7 +76,7 @@ export async function getSession() {
     if(isExpired) {
         await prisma.session.delete({
             where: { id: hashedToken }
-        });
+        }).catch(() => {});;
         cookieStore.delete("session");
         return null;
     }

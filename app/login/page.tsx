@@ -39,7 +39,7 @@ const Page = () => {
 
               <div className="login-options">
                 <label className="remember">
-                  <input type="checkbox" />
+                  <input type="checkbox" name="rememberMe" />
                   <span>Remember Me</span>
                 </label>
 
