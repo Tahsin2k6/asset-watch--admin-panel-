@@ -9,10 +9,14 @@ export default async function AdminPage() {
     }
 
     const currentUser = session.user;
+
+    if (currentUser.role !== "SUPER_ADMIN") {
+        redirect("/login");
+    }
     
     return (
     <div className="p-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
         <p>Welcome Back, {currentUser.email}!</p>
     </div>
     )

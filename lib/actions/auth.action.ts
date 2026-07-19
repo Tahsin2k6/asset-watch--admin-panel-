@@ -45,7 +45,7 @@ export async function handleLogIn(prevState: LogInResponse | null, formData: For
   }
 
   if (isSuccess) {
-    redirect("/admin"); 
+    redirect("/super-admin"); 
   }
 
   return { error: null };

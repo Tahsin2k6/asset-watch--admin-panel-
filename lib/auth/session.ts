@@ -1,23 +1,30 @@
-import { cookies } from "next/headers";
+import crypto from "crypto";
 import { prisma } from "../db";
+import { cookies } from "next/headers";
 
 const SESSION_DURATION = 60 * 60 * 1000;
+
+function hashToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 export async function createSession(userID: string) {
     const expiresAt = new Date(Date.now() + SESSION_DURATION);
 
-    const token = crypto.randomUUID();
+    const rawToken = crypto.randomUUID();
+
+    const hashedToken = hashToken(rawToken);
 
     await prisma.session.create({
         data: {
-            id: token,
+            id: hashedToken,
             userId: userID,
             expiresAt: expiresAt,
         }
     })
 
     const cookieStore = await cookies();
-    cookieStore.set("session", token, {
+    cookieStore.set("session", rawToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         expires: expiresAt,
@@ -28,13 +35,24 @@ export async function createSession(userID: string) {
 
 export async function getSession() {
     const cookieStore = await cookies();
-    const token = cookieStore.get("session")?.value;
+    const rawToken = cookieStore.get("session")?.value;
 
-    if(!token) return null;
+    if(!rawToken) return null;
+
+    const hashedToken = hashToken(rawToken);
 
     const session = await prisma.session.findUnique({
-        where: { id: token },
-        include: { user: true }
+        where: { id: hashedToken },
+        include: { 
+            user: {
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    createdAt: true
+                }
+            }
+         }
     })
 
     if(!session) return null;
@@ -43,7 +61,7 @@ export async function getSession() {
 
     if(isExpired) {
         await prisma.session.delete({
-            where: { id: token }
+            where: { id: hashedToken }
         });
         cookieStore.delete("session");
         return null;
@@ -54,12 +72,13 @@ export async function getSession() {
 
 export async function deleteSession(): Promise<void> {
     const cookieStore = await cookies();
-    const token = cookieStore.get("session")?.value;
+    const rawToken = cookieStore.get("session")?.value;
 
-    if(token) {
+    if(rawToken) {
+        const hashedToken = hashToken(rawToken);
         try{
             await prisma.session.delete({
-                where: { id: token }
+                where: { id: hashedToken }
             });
         }
         catch(error) {

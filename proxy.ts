@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
+  const { origin } = request.nextUrl;
 
-    const { pathname, origin } = request.nextUrl;
+  const sessionToken = request.cookies.get("session")?.value;
 
-    if(pathname === "/login") {
-        return NextResponse.next();
-    }
-    const sessionToken = request.cookies.get("session")?.value;
+  if (!sessionToken) {
+    return NextResponse.redirect(new URL("/login", origin));
+  }
 
-    if(!sessionToken) {
-        return NextResponse.redirect(new URL("/login", origin));
-    }
-
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/super-admin/:path*",
+    "/viewer/:path*",
+  ],
 };
