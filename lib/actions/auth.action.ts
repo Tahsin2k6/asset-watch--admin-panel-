@@ -46,13 +46,10 @@ export async function handleLogIn(prevState: LogInResponse | null, formData: For
     return { error: "Internal database server error. Please try again." };
   }
 
-  if (userRole === "SUPER_ADMIN") {
-    redirect("/super-admin"); 
-  }
-  else if (userRole === "VIEWER") {
-    redirect("/viewer");
+  if (userRole) {
+    redirect("/dashboard"); 
   }
 
-  return { error: null };
+  return { error: "An unexpected configuration error occurred." };
 
 }

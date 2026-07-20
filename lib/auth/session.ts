@@ -76,7 +76,7 @@ export async function getSession() {
     if(isExpired) {
         await prisma.session.delete({
             where: { id: hashedToken }
-        }).catch(() => {});;
+        }).catch(() => {});
         cookieStore.delete("session");
         return null;
     }
